@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<library path="sspmbot_hardware">
+    <class
+        name="sspmbot_hardware/SSPmBotHardware"
+        type="sspmbot::hardware::SSPmBotHardware"
+        base_class_type="hardware_interface::SystemInterface">
+    <description>
+        Hardware Interface for the Sisyphus Mecanum Robot.
+    </description>
+    </class>
+</library>
