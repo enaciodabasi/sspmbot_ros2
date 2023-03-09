@@ -26,7 +26,7 @@
 #include <string>
 
 #include "visibility_control.h"
-
+#include "amr_kinematics/mecanum_kinematics.hpp"
 namespace sspmbot
 {
 

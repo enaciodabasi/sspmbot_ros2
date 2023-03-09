@@ -13,6 +13,8 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 
+find_package(amr_kinematics REQUIRED)
+
 add_library(
   ${PROJECT_NAME}
   SHARED
@@ -23,6 +25,7 @@ target_include_directories(
   ${PROJECT_NAME}
   PRIVATE
   include
+  ${amr_kinematics}_INCLUDE_DIRS
 )
 
 ament_target_dependencies(
@@ -31,6 +34,7 @@ ament_target_dependencies(
   pluginlib
   rclcpp
   rclcpp_lifecycle
+  amr_kinematics
 )
 
 target_compile_definitions(
