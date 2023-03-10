@@ -36,6 +36,7 @@ namespace sspmbot
             public:
 
             Communicator(const std::string& node_name);
+            ~Communicator(){};
 
             /**
              * @brief Get the latest wheel velocities coming from the hardware.

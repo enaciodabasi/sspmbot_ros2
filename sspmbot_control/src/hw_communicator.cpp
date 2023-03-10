@@ -1,9 +1,9 @@
 /**
- * @file sspmbot_hardware_communicator.cpp
+ * @file hw_communicator.cpp
  * @author Eren Naci Odabasi (enaciodabasi@outlook.com)
  * @brief 
  * @version 0.1
- * @date 2023-03-09
+ * @date 2023-03-10
  * 
  * @copyright Copyright (c) 2023
  * 
