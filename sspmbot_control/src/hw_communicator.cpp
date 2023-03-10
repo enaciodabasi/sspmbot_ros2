@@ -39,6 +39,13 @@ namespace sspmbot
                         _1
                     )
                 );
+                
+                m_ReceivedImuMsgPtr.set(std::make_shared<sensor_msgs::msg::Imu>());
+
+                m_ImuPub = this->create_publisher<sensor_msgs::msg::Imu>(
+                    "/amr/imu_data",
+                    rclcpp::SensorDataQoS()
+                );
 
                 m_BatteryStateSub = this->create_subscription<sensor_msgs::msg::BatteryState>(
                     "hw/amr/battery_state",
@@ -50,6 +57,8 @@ namespace sspmbot
                     )
                 );
 
+                m_ReceivedBatteryStatePtr.set(std::make_shared<sensor_msgs::msg::BatteryState>());
+
                 m_WheelVelsPub = this->create_publisher<std_msgs::msg::Float64MultiArray>(
                     "hw/amr/target_wheel_vels",
                     rclcpp::SystemDefaultsQoS()
@@ -60,19 +69,58 @@ namespace sspmbot
                 
         }
 
+        kinematics::WheelVelocities Communicator::getWheelVelsFromHW()
+        {
+            std::shared_ptr<std_msgs::msg::Float64MultiArray> hwVels;
+            m_ReceivedWheelVelsPtr.get(hwVels);
+            kinematics::WheelVelocities wheelVels;
+            if(hwVels->data.size() != 4)
+            {
+                wheelVels.state = kinematics::WheelVelocityState::ERROR;
+                return wheelVels;   
+            }
+            
+            wheelVels.frontLeft = hwVels->data[0];
+            wheelVels.frontRight = hwVels->data[1];
+            wheelVels.rearLeft = hwVels->data[2];
+            wheelVels.rearRight = hwVels->data[3];
+            wheelVels.state = kinematics::WheelVelocityState::OK;
+            
+            return wheelVels;
+        }
+
+        void Communicator::sendVelocityCommandToHW(const kinematics::WheelVelocities& wheel_vel_commands)
+        {
+            std_msgs::msg::Float64MultiArray wheelCmds;
+                wheelCmds.data.reserve(4);
+
+                wheelCmds.data[0] = wheel_vel_commands.frontLeft;
+                wheelCmds.data[1] = wheel_vel_commands.frontRight;
+                wheelCmds.data[2] = wheel_vel_commands.rearLeft;
+                wheelCmds.data[3] = wheel_vel_commands.rearRight;
+
+                if(m_RtWheelVelsPub->trylock())
+                {
+                    auto& rtMsg = m_RtWheelVelsPub->msg_;
+                    rtMsg = wheelCmds;
+
+                    m_RtWheelVelsPub->unlockAndPublish();
+                }
+        }
+
         void Communicator::hw_wheel_vels_callback(const std_msgs::msg::Float64MultiArray::SharedPtr hw_wheel_vels_msg)
         {
-            
+            m_ReceivedWheelVelsPtr.set(std::move(hw_wheel_vels_msg));
         }
 
         void Communicator::hw_imu_callback(const sensor_msgs::msg::Imu::SharedPtr hw_imu_msg)
         {
-
+            m_ReceivedImuMsgPtr.set(std::move(hw_imu_msg));
         }
 
         void Communicator::hw_battery_state_callback(const sensor_msgs::msg::BatteryState::SharedPtr hw_battery_state_msg)
         {
-
+            m_ReceivedBatteryStatePtr.set(std::move(hw_battery_state_msg));
         }
     }
 }

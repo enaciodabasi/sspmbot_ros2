@@ -14,9 +14,10 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <realtime_tools/realtime_publisher.h>
-#include <realtime_tools/realtime_buffer.h>
+#include <realtime_tools/realtime_box.h>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/battery_state.hpp>
+
 #include <std_msgs/msg/float64_multi_array.hpp>
 
 #include "amr_kinematics/mecanum_kinematics.hpp"
@@ -35,18 +36,30 @@ namespace sspmbot
             public:
 
             Communicator(const std::string& node_name);
+
+            /**
+             * @brief Get the latest wheel velocities coming from the hardware.
+             * 
+             * @return  kinematics::WheelVelocities struct.
+             *  
+             */
+            kinematics::WheelVelocities getWheelVelsFromHW();
+
+            void sendVelocityCommandToHW(const kinematics::WheelVelocities& wheel_vel_commands);
             
             private:
 
-            rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr m_ImuSub;
-            //realtime_tools::RealtimeBuffer<std::shared_ptr<sensor_msgs::msg::Imu>> m_ImuDataBuffer;
+            rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr m_ImuSub = nullptr;
+            realtime_tools::RealtimeBox<std::shared_ptr<sensor_msgs::msg::Imu>> m_ReceivedImuMsgPtr{nullptr};
+            rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr m_ImuPub = nullptr;
 
-            rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr m_BatteryStateSub;
+            rclcpp::Subscription<sensor_msgs::msg::BatteryState>::SharedPtr m_BatteryStateSub = nullptr;
+            realtime_tools::RealtimeBox<std::shared_ptr<sensor_msgs::msg::BatteryState>> m_ReceivedBatteryStatePtr{nullptr};
 
-            rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr m_WheelVelsSub;
-            //realtime_tools::RealtimeBuffer<std::shared_ptr<std_msgs::msg::Float64MultiArray>> m_WheelVelsBuffer;
+            rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr m_WheelVelsSub = nullptr;
+            realtime_tools::RealtimeBox<std::shared_ptr<std_msgs::msg::Float64MultiArray>> m_ReceivedWheelVelsPtr{nullptr};
 
-            rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr m_WheelVelsPub;
+            rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr m_WheelVelsPub = nullptr;
             std::shared_ptr<realtime_tools::RealtimePublisher<std_msgs::msg::Float64MultiArray>> m_RtWheelVelsPub;
 
             /**
