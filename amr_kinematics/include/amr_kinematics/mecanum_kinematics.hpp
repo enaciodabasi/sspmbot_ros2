@@ -16,15 +16,20 @@
 
 namespace kinematics
 {
-    namespace mecanum
-    {
-        struct WheelInformation
+
+    struct WheelInformation
         {
             double wheel_radius{0.0};
 
             double wheel_separation_width{0.0};
 
             double wheel_separation_length{0.0};
+        };
+
+        enum class WheelVelocityState
+        {
+            OK,
+            ERROR
         };
 
         /**
@@ -34,7 +39,7 @@ namespace kinematics
         struct WheelVelocities
         {
             
-            std::string state{"OK"};
+            WheelVelocityState state;
 
             double frontLeft{0.0};
 
@@ -53,6 +58,9 @@ namespace kinematics
 
             double angularZ{0.0};
         };
+
+    namespace mecanum
+    {
 
         /**
          * @brief Calculates individual wheel velocities
