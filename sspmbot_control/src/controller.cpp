@@ -44,6 +44,11 @@ namespace sspmbot
             m_RtOdomPub = std::make_shared<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>>(
                 m_OdomPub
             );
+            auto& odomMsg = m_RtOdomPub->msg_;
+            odomMsg.pose.pose.position.z = 0.0;
+            odomMsg.twist.twist.linear.z = 0.0;
+            odomMsg.twist.twist.angular.x = 0.0;
+            odomMsg.twist.twist.angular.y = 0.0;
 
             m_OdomTransformPub = this->create_publisher<tf2_msgs::msg::TFMessage>(
                 "/tf",
@@ -52,6 +57,10 @@ namespace sspmbot
             m_RtOdomTransformPub = std::make_shared<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>>(
                 m_OdomTransformPub
             );
+            auto& odomTransformMsgs = m_RtOdomTransformPub->msg_;
+            odomTransformMsgs.transforms.resize(1);
+            auto& odomTransformMsg = odomTransformMsgs.transforms.front();
+            odomTransformMsg.transform.translation.z = 0.0;
 
             /* m_UpdateLoop = this->create_wall_timer(
                 20ms,
@@ -92,9 +101,67 @@ namespace sspmbot
             const double linear_y = lastVelCmd->twist.linear.y;
             const double angular_z = lastVelCmd->twist.angular.z;
 
-            // Update Odometry.
+            // Update Odometry and tf between odom and base_link frames.
+            auto odomInfo = m_Odom->getOdometry(
+                {linear_x, linear_y, angular_z},
+                currentTime
+            );
 
-            // Send transform.
+            if(odomInfo != std::nullopt)
+            {
+                bool odomTfPublished = false;
+
+                auto odometryInfo = std::move(*odomInfo);
+                if(m_RtOdomTransformPub->trylock())
+                {
+                    auto odomTransform = odometryInfo.second;
+                    // We only send one transformation, so use the front transform in the vector.
+                    auto& odomTransformMsg = m_RtOdomTransformPub->msg_.transforms.front();
+
+                    odomTransformMsg.header.frame_id = odomTransform.header.frame_id;
+                    odomTransformMsg.header.stamp = odomTransform.header.stamp;
+                    odomTransformMsg.child_frame_id = odomTransform.child_frame_id;
+                    odomTransformMsg.transform.translation.x = odomTransform.transform.translation.x;
+                    odomTransformMsg.transform.translation.y = odomTransform.transform.translation.y;
+                    odomTransformMsg.transform.rotation.x = odomTransform.transform.rotation.x;
+                    odomTransformMsg.transform.rotation.y = odomTransform.transform.rotation.y;
+                    odomTransformMsg.transform.rotation.z = odomTransform.transform.rotation.z;
+                    odomTransformMsg.transform.rotation.w = odomTransform.transform.rotation.w;
+
+                    m_RtOdomTransformPub->unlockAndPublish();
+
+                    odomTfPublished = true;
+                }
+
+                if(odomTfPublished && m_RtOdomPub->trylock())
+                {
+                    auto odom = odometryInfo.first;
+
+                    auto& odomMsg = m_RtOdomPub->msg_;
+                    odomMsg.header.frame_id = odom.header.frame_id;
+                    odomMsg.header.stamp = odom.header.stamp;
+                    
+                    odomMsg.child_frame_id = odom.child_frame_id;
+                    
+                    odomMsg.pose.pose.position.x = odom.pose.pose.position.x;
+                    odomMsg.pose.pose.position.y = odom.pose.pose.position.y;
+
+                    odomMsg.pose.pose.orientation.x = odom.pose.pose.orientation.x;
+                    odomMsg.pose.pose.orientation.y = odom.pose.pose.orientation.y;
+                    odomMsg.pose.pose.orientation.z = odom.pose.pose.orientation.z;
+                    odomMsg.pose.pose.orientation.w = odom.pose.pose.orientation.w;
+
+                    odomMsg.twist.twist.linear.x = odom.twist.twist.linear.x;
+                    odomMsg.twist.twist.linear.y = odom.twist.twist.linear.y;
+                    odomMsg.twist.twist.angular.z = odom.twist.twist.angular.z;
+
+                    m_RtOdomPub->unlockAndPublish();
+                }
+
+                
+            }
+
+            
 
             const kinematics::WheelVelocities wheelVelCmds = kinematics::mecanum::calculate_wheel_velocities(
                 linear_x,
