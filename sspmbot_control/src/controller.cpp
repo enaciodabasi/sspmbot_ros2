@@ -62,13 +62,13 @@ namespace sspmbot
             auto& odomTransformMsg = odomTransformMsgs.transforms.front();
             odomTransformMsg.transform.translation.z = 0.0;
 
-            /* m_UpdateLoop = this->create_wall_timer(
+            m_UpdateLoop = this->create_wall_timer(
                 20ms,
                 std::bind(
                     &Controller::update,
                     this
                 )
-            ); */
+            );
         }
 
         Controller::~Controller()
@@ -81,29 +81,12 @@ namespace sspmbot
 
             rclcpp::Time currentTime = this->get_clock()->now();
 
-            std::shared_ptr<geometry_msgs::msg::TwistStamped> lastVelCmd;
-            m_TwistCmdMsgPtr.get(lastVelCmd);
-            if(lastVelCmd == nullptr)
-            {
-                return;
-            }
-
-
-            const auto lastCmdTime = currentTime - lastVelCmd->header.stamp;
-            if(lastCmdTime > m_VelCommandTimeout)
-            {
-                lastVelCmd->twist.linear.x = 0.0;
-                lastVelCmd->twist.linear.y = 0.0;
-                lastVelCmd->twist.angular.z = 0.0;  
-            }
-
-            const double linear_x = lastVelCmd->twist.linear.x;
-            const double linear_y = lastVelCmd->twist.linear.y;
-            const double angular_z = lastVelCmd->twist.angular.z;
+            auto currentVels = m_HardwareCommunicator->getWheelVelsFromHW();
+            auto currentRobotVel = kinematics::mecanum::calculate_body_velocities(currentVels, m_WheelInfo);
 
             // Update Odometry and tf between odom and base_link frames.
             auto odomInfo = m_Odom->getOdometry(
-                {linear_x, linear_y, angular_z},
+                {currentRobotVel.linearX, currentRobotVel.linearY, currentRobotVel.angularZ},
                 currentTime
             );
 
@@ -161,6 +144,25 @@ namespace sspmbot
                 
             }
 
+            std::shared_ptr<geometry_msgs::msg::TwistStamped> lastVelCmd;
+            m_TwistCmdMsgPtr.get(lastVelCmd);
+            if(lastVelCmd == nullptr)
+            {
+                return;
+            }
+
+
+            const auto lastCmdTime = currentTime - lastVelCmd->header.stamp;
+            if(lastCmdTime > m_VelCommandTimeout)
+            {
+                lastVelCmd->twist.linear.x = 0.0;
+                lastVelCmd->twist.linear.y = 0.0;
+                lastVelCmd->twist.angular.z = 0.0;  
+            }
+
+            const double linear_x = lastVelCmd->twist.linear.x;
+            const double linear_y = lastVelCmd->twist.linear.y;
+            const double angular_z = lastVelCmd->twist.angular.z;
             
 
             const kinematics::WheelVelocities wheelVelCmds = kinematics::mecanum::calculate_wheel_velocities(
