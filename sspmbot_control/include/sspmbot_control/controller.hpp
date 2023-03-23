@@ -20,6 +20,7 @@
 #include <geometry_msgs/msg/twist_stamped.hpp>
 
 #include "amr_kinematics/mecanum_kinematics.hpp"
+#include "amr_kinematics/odom.hpp"
 #include "hw_communicator.hpp"
 
 namespace sspmbot
@@ -47,6 +48,8 @@ namespace sspmbot
 
             rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr m_OdomTransformPub;
             std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>> m_RtOdomTransformPub;
+
+            std::unique_ptr<odometry::Odometry> m_Odom;
 
             rclcpp::TimerBase::SharedPtr m_UpdateLoop;
 

@@ -21,6 +21,11 @@ namespace sspmbot
             m_Timestamp = rclcpp::Time(0.0);
         }
 
+        Odometry::~Odometry()
+        {
+
+        }
+
         std::optional<OdomInfo> Odometry::getOdometry(
             const kinematics::BodyVelocities& body_vels,
             rclcpp::Time curr_time
@@ -45,7 +50,7 @@ namespace sspmbot
             yawQuat.setRPY(0, 0, m_Th); // Create Quaternion from the yaw of the robot (m_Th).
             
             geometry_msgs::msg::Quaternion odomQuat;
-            odomQuat = tf2::toMsg<tf2::Quaternion, geometry_msgs::msg::Quaternion>(yawQuat); 
+            odomQuat = tf2::toMsg(yawQuat); 
 
             geometry_msgs::msg::TransformStamped odomTransform;
             odomTransform.header.stamp = curr_time;

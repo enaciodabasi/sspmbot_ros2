@@ -12,9 +12,14 @@ find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
-find_package(std_msgs)
-
+find_package(std_msgs REQUIRED)
 find_package(amr_kinematics REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+
 
 add_library(
   ${PROJECT_NAME}
@@ -24,7 +29,7 @@ add_library(
 
 target_include_directories(
   ${PROJECT_NAME}
-  PRIVATE
+  PUBLIC
   include
   ${amr_kinematics}_INCLUDE_DIRS
 )
@@ -35,6 +40,11 @@ ament_target_dependencies(
   pluginlib
   rclcpp
   rclcpp_lifecycle
+  nav_msgs
+  geometry_msgs
+  tf2
+  tf2_msgs
+  tf2_geometry_msgs
   amr_kinematics
 )
 

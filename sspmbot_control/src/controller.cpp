@@ -24,6 +24,8 @@ namespace sspmbot
 
             RCLCPP_INFO(this->get_logger(), "Creating the SSPMBot controller node.");
 
+            m_Odom = std::make_unique<odometry::Odometry>(m_WheelInfo);
+
             m_TwistCmdSub = this->create_subscription<geometry_msgs::msg::TwistStamped>(
                 "/cmd_vel",
                 rclcpp::SystemDefaultsQoS(),
@@ -51,13 +53,13 @@ namespace sspmbot
                 m_OdomTransformPub
             );
 
-            m_UpdateLoop = this->create_wall_timer(
+            /* m_UpdateLoop = this->create_wall_timer(
                 20ms,
                 std::bind(
                     &Controller::update,
                     this
                 )
-            );
+            ); */
         }
 
         Controller::~Controller()

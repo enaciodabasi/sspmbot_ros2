@@ -10,8 +10,10 @@ set(CMAKE_CXX_STANDARD 17)
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(tf2 REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(realtime_tools REQUIRED)
@@ -32,6 +34,9 @@ ament_target_dependencies(
   sensor_msgs
   std_msgs
   realtime_tools
+  tf2
+  geometry_msgs
+  tf2_geometry_msgs
   amr_kinematics
 )
 target_include_directories(
