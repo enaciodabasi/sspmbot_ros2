@@ -26,12 +26,12 @@ namespace sspmbot
                 return hardware_interface::CallbackReturn::ERROR;
             }
 
-            m_HardwarePositionStates.resize(
+            m_JointPositionStates.resize(
                 info_.joints.size(),
                 std::numeric_limits<double>::quiet_NaN()
             );
 
-            m_HardwareVelocityStates.resize(
+            m_JointPositionStates.resize(
                 info_.joints.size(),
                 std::numeric_limits<double>::quiet_NaN()
             );
@@ -89,14 +89,14 @@ namespace sspmbot
                     hardware_interface::StateInterface(
                         info_.joints[i].name,
                         hardware_interface::HW_IF_POSITION,
-                        &m_HardwarePositionStates[i]
+                        &m_JointPositionStates[i]
                     )
                 );
                 stateInterfaces.emplace_back(
                     hardware_interface::StateInterface(
                         info_.joints[i].name,
                         hardware_interface::HW_IF_VELOCITY,
-                        &m_HardwareVelocityStates[i]
+                        &m_JointPositionStates[i]
                     )
                 );
             }
@@ -130,14 +130,14 @@ namespace sspmbot
 
             for(std::size_t i = 0; i < info_.joints.size(); i++)
             {
-                if(std::isnan(m_HardwarePositionStates[i]))
+                if(std::isnan(m_JointPositionStates[i]))
                 {
-                    m_HardwarePositionStates[i] = 0.0;
+                    m_JointPositionStates[i] = 0.0;
                 }
 
-                if(std::isnan(m_HardwareVelocityStates[i]))
+                if(std::isnan(m_JointPositionStates[i]))
                 {
-                    m_HardwareVelocityStates[i] = 0.0;
+                    m_JointPositionStates[i] = 0.0;
                 }
 
                 if(std::isnan(m_HardwareCommands[i]))
@@ -148,6 +148,13 @@ namespace sspmbot
 
             // Create hardware communicator
 
+            m_HardwareCommunicator = std::make_shared<hardware::Communicator>("amr_hardware_communicator");
+            m_Executor.add_node(m_HardwareCommunicator);
+
+            m_ExecutorThread = std::make_unique<std::thread>(
+                std::bind(&rclcpp::executors::MultiThreadedExecutor::spin, &m_Executor)
+            );
+
             RCLCPP_INFO(rclcpp::get_logger("SSPmBotHardware"), "Hardware interface started.");
             
             return hardware_interface::CallbackReturn::SUCCESS;
@@ -156,17 +163,49 @@ namespace sspmbot
 
         hardware_interface::CallbackReturn SSPmBotHardware::on_deactivate(const rclcpp_lifecycle::State &previous_state)
         {
-            
+
+            if(m_ExecutorThread->joinable())
+            {
+                m_ExecutorThread->join();
+            }
         }
 
         hardware_interface::return_type SSPmBotHardware::read(const rclcpp::Time &time, const rclcpp::Duration &period)
         {
-            
+            auto wheelVels = m_HardwareCommunicator->getWheelVelsFromHW();
+
+            if(wheelVels.state == kinematics::WheelVelocityState::ERROR)
+            {
+                return hardware_interface::return_type::ERROR;
+            }
+
+            m_JointVelocityStates[0] = wheelVels.frontLeft;
+            m_JointVelocityStates[1] = wheelVels.frontRight;
+            m_JointVelocityStates[2] = wheelVels.rearLeft;
+            m_JointVelocityStates[3] = wheelVels.rearLeft;    
+
+
+            return hardware_interface::return_type::OK;
         }
+
 
         hardware_interface::return_type SSPmBotHardware::write(const rclcpp::Time &time, const rclcpp::Duration &period)
         {
-            
+
+            if(m_HardwareCommands.empty() || m_HardwareCommands.size() != 4)
+            {
+                m_HardwareCommunicator->sendVelocityCommandToHW(
+                    {kinematics::WheelVelocityState::ERROR, 0, 0, 0, 0}
+                );
+            }
+
+            m_HardwareCommunicator->sendVelocityCommandToHW(
+                {
+                    kinematics::WheelVelocityState::OK, m_HardwareCommands[0], m_HardwareCommands[1], m_HardwareCommands[2], m_HardwareCommands[3]
+                }
+            );
+
+            return hardware_interface::return_type::OK;
         }
     }
 }

@@ -22,11 +22,14 @@
 #include <rclcpp_lifecycle/state.hpp>
 
 #include <memory>
+#include <thread>
 #include <vector>
 #include <string>
 
 #include "visibility_control.h"
+#include "sspmbot_hardware_communicator.hpp"
 #include "amr_kinematics/mecanum_kinematics.hpp"
+
 namespace sspmbot
 {
 
@@ -62,8 +65,15 @@ namespace sspmbot
             private:
 
             std::vector<double> m_HardwareCommands;
-            std::vector<double> m_HardwarePositionStates;
-            std::vector<double> m_HardwareVelocityStates;
+            std::vector<double> m_JointPositionStates;
+            std::vector<double> m_JointVelocityStates;
+
+            rclcpp::executors::MultiThreadedExecutor m_Executor;
+
+            std::unique_ptr<std::thread> m_ExecutorThread;
+
+            std::shared_ptr<Communicator> m_HardwareCommunicator;
+
 
         };
     }

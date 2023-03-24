@@ -18,6 +18,7 @@ find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_msgs REQUIRED)
+find_package(realtime_tools REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 
 
@@ -25,6 +26,7 @@ add_library(
   ${PROJECT_NAME}
   SHARED
   src/sspmbot_system.cpp
+  src/sspmbot_hardware_communicator.cpp
 )
 
 target_include_directories(
@@ -45,6 +47,7 @@ ament_target_dependencies(
   tf2
   tf2_msgs
   tf2_geometry_msgs
+  realtime_tools
   amr_kinematics
 )
 
