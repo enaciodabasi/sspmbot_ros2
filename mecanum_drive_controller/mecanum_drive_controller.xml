@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<library path="mecanum_drive_controller">
+    <class 
+        name="mecanum_drive_controller/MecanumDriveController"
+        type="mecanum_drive_controller::MecanumDriveController"
+        base_class_type="controller_interface::ControllerInterface">
+
+    <description>
+        Mecanum drive controller for 4WD mecanum mobile robots.
+    </description>
+    </class>
+</library>
