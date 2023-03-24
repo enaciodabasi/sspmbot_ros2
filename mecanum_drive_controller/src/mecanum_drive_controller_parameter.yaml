@@ -1,0 +1,60 @@
+mecanum_drive_controller:
+  left_wheel_names: {
+    type: string_array,
+    default_value: [],
+    description: "Joint names of the left side wheels."
+  }
+
+  right_wheel_names: {
+    type: string_array,
+    default_value: [],
+    description: "Joint names of the right side wheels."
+  }
+
+  wheel_separation_length: {
+    type: double,
+    default_value: 0.0,
+    description: "Shortest distance between the front and rear wheels, on either side."
+  }
+
+  wheel_separation_width: {
+    type: double,
+    default_value: 0.0,
+    description: "Shortest distance between the left and right wheels."
+  }
+
+  wheel_radius: {
+    type: double,
+    default_value: 0.0,
+    description: "Radius of the wheels."
+  }
+
+  base_frame_id: {
+    type: string,
+    default_value: "base_link",
+    description: "Name of the robot's base frame."
+  }
+
+  odom_frame_id: {
+    type: string,
+    default_value: "odom",
+    description: "Name of the odometry frame."
+  }
+
+  velocity_command_timeout: {
+    type: double,
+    default_value: 0.5, # [seconds]
+    description: "Received velocity commands will be ignored after velocity_command_timeout seconds."
+  }
+
+  velocity_command_topic_name: {
+    type: string,
+    default_value: "cmd_vel",
+    description: "Topic name to subscribe to for velocity commands."
+  }
+
+  publish_rate: {
+    type: double,
+    default_value: 50.0, # [Hz]
+    description: "Publishing rate of the odometry and the TF message."
+  }
