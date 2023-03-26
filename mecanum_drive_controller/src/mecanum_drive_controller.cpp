@@ -69,7 +69,101 @@ namespace mecanum_drive_controller
 
     controller_interface::return_type MecanumDriveController::update(const rclcpp::Time &time, const rclcpp::Duration &period)
     {
+        if(get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+        {
+            if(!m_IsHalted)
+            {   
+                this->halt();
+                m_IsHalted = true;
+            }
+
+            return controller_interface::return_type::OK;
+        }
         
+        // Get the current joint velocities which are calculated from the incoming encoder data.
+        kinematics::WheelVelocities currentWheelVels = {
+            kinematics::WheelVelocityState::OK,
+            m_FrontLeftWheelHandle->get_velocity_state(),
+            m_FrontRightWheelHandle->get_velocity_state(),
+            m_RearLeftWheelHandle->get_velocity_state(),
+            m_RearRightWheelHandle->get_velocity_state()
+        };
+
+        auto currentBodyVel = kinematics::mecanum::calculate_body_velocities(
+            currentWheelVels,
+            m_WheelInfo
+        );
+
+        // Update odometry with the encoder data.
+        auto updatedOdomInfo = m_Odom.update(currentBodyVel, time);
+
+        if(updatedOdomInfo != std::nullopt && (m_PreviousPublishTimestamp + m_PublishPeriod < time))
+        {
+            m_PreviousPublishTimestamp += m_PublishPeriod;
+
+            auto odomInfo = std::move(*updatedOdomInfo);
+            
+            if(m_RtOdomPub->trylock())
+            {
+                auto odom = odomInfo.first;
+                auto& odomMsg = m_RtOdomPub->msg_;
+
+                odomMsg.header.stamp = time;
+                odomMsg.pose = odom.pose;
+
+                odomMsg.twist.twist.linear.x = odom.twist.twist.linear.x;
+                odomMsg.twist.twist.linear.y = odom.twist.twist.linear.y;
+                odomMsg.twist.twist.angular.z = odom.twist.twist.angular.z;
+
+                m_RtOdomPub->unlockAndPublish();
+            }
+
+            if(m_RtOdomTransformPub->trylock())
+            {
+                auto transform = odomInfo.second;
+
+                auto& tfMsg = m_RtOdomTransformPub->msg_.transforms.front();
+                
+                tfMsg.header.stamp = time;
+                tfMsg.transform = transform.transform;
+
+                m_RtOdomTransformPub->unlockAndPublish();
+            }
+
+
+        }
+
+        std::shared_ptr<geometry_msgs::msg::TwistStamped> lastTwistCommand;
+        m_TwistCmdMsgPtr.get(lastTwistCommand);
+        if(lastTwistCommand == nullptr)
+        {
+            RCLCPP_WARN(this->get_node()->get_logger(), "Received empty twist command.");
+            return controller_interface::return_type::ERROR;
+        }
+
+        if(time - lastTwistCommand->header.stamp > m_VelocityCommandTimeout)
+        {
+            lastTwistCommand->twist.linear.x = 0.0;
+            lastTwistCommand->twist.linear.y = 0.0;
+            lastTwistCommand->twist.angular.z = 0.0;
+        }
+
+        m_PreviousUpdateTimeStamp = time;
+
+        const kinematics::WheelVelocities wheelVelCmds = kinematics::mecanum::calculate_wheel_velocities(
+            lastTwistCommand->twist.linear.x,
+            lastTwistCommand->twist.linear.y,
+            lastTwistCommand->twist.angular.z,
+            m_WheelInfo            
+        );
+
+        m_FrontLeftWheelHandle->set_velocity_command(wheelVelCmds.frontLeft);
+        m_FrontRightWheelHandle->set_velocity_command(wheelVelCmds.frontRight);
+        m_RearLeftWheelHandle->set_velocity_command(wheelVelCmds.rearLeft);
+        m_RearRightWheelHandle->set_velocity_command(wheelVelCmds.rearRight);
+        
+        return controller_interface::return_type::OK;
+
     }
 
     controller_interface::CallbackReturn MecanumDriveController::on_init()
@@ -179,6 +273,8 @@ namespace mecanum_drive_controller
 
             return controller_interface::CallbackReturn::ERROR;
         }
+
+        m_IsHalted = false;
 
         return controller_interface::CallbackReturn::SUCCESS;
     }
@@ -321,7 +417,17 @@ namespace mecanum_drive_controller
 
         m_TwistCmdMsgPtr.set(nullptr);
 
+        m_IsHalted = false;
+
         return true;
+    }
+
+    void MecanumDriveController::halt()
+    {
+        m_FrontLeftWheelHandle->set_velocity_command(0.0);
+        m_FrontRightWheelHandle->set_velocity_command(0.0);
+        m_RearLeftWheelHandle->set_velocity_command(0.0);
+        m_RearRightWheelHandle->set_velocity_command(0.0);
     }
 }
 

@@ -20,6 +20,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <tf2_msgs/msg/tf_message.hpp>
+#include <lifecycle_msgs/msg/state.hpp>
 
 #include <memory>
 #include <functional>
@@ -87,6 +88,8 @@ namespace mecanum_drive_controller
 
         std::unique_ptr<WheelHandle> getWheelHandle(const std::string& joint_name);
 
+        kinematics::WheelInformation m_WheelInfo;
+
         private:
 
         mecanum::odometry::Odometry m_Odom;
@@ -100,6 +103,8 @@ namespace mecanum_drive_controller
         double m_PublishFrequency = 100.0; // [Hz];
 
         rclcpp::Duration m_PublishPeriod = rclcpp::Duration::from_nanoseconds(0);
+
+        bool m_IsHalted = false;
 
         private: // ROS 2 related variables and functions:
 
@@ -116,7 +121,6 @@ namespace mecanum_drive_controller
         rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr m_OdomTransformPub;
         std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>> m_RtOdomTransformPub;
 
-
         void cmdVel_callback(const std::shared_ptr<geometry_msgs::msg::TwistStamped> cmdVel_msg);
 
         /**
@@ -126,6 +130,8 @@ namespace mecanum_drive_controller
         void configure_realtime_publisher_msgs();
 
         bool resetController();
+
+        void halt();
 
     };
 }

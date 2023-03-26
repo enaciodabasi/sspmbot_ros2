@@ -54,7 +54,7 @@ namespace mecanum
              * @param curr_time: rclcpp::Time, time when this function is called. 
              * @return Odom std::nullopt if the time interval is too small, otherwise nav_msgs::msg::Odom. 
              */
-            std::optional<OdomInfo> getOdometry(
+            std::optional<OdomInfo> update(
                 const kinematics::BodyVelocities& body_vels,
                 rclcpp::Time curr_time
             );

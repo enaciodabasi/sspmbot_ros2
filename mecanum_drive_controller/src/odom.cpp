@@ -26,7 +26,7 @@ namespace mecanum
 
         }
 
-        std::optional<OdomInfo> Odometry::getOdometry(
+        std::optional<OdomInfo> Odometry::update(
             const kinematics::BodyVelocities& body_vels,
             rclcpp::Time curr_time
         )
