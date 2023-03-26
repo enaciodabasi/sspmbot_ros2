@@ -11,7 +11,7 @@
 
 #include "mecanum_drive_controller/odom.hpp"
 
-namespace sspmbot
+namespace mecanum
 {
     namespace odometry
     {

@@ -28,6 +28,8 @@
 
 #include "visibility_control.h"
 #include "wheel_handle.hpp"
+#include "mecanum_drive_controller_parameters.hpp"
+#include "odom.hpp"
 
 namespace mecanum_drive_controller
 {
@@ -85,10 +87,45 @@ namespace mecanum_drive_controller
 
         std::unique_ptr<WheelHandle> getWheelHandle(const std::string& joint_name);
 
+        private:
+
+        mecanum::odometry::Odometry m_Odom;
+
+        std::chrono::milliseconds m_VelocityCommandTimeout{500};
+
+        rclcpp::Time m_PreviousUpdateTimeStamp;
+
+        rclcpp::Time m_PreviousPublishTimestamp;
+
+        double m_PublishFrequency = 100.0; // [Hz];
+
+        rclcpp::Duration m_PublishPeriod = rclcpp::Duration::from_nanoseconds(0);
+
         private: // ROS 2 related variables and functions:
 
-        realtime_tools::RealtimeBox<std::shared_ptr<geometry_msgs::msg::TwistStamped>> m_ReceivedTwistMsgPtr{nullptr};
+        std::shared_ptr<ParamListener> m_ParamListener;
+        Params m_Params;
+
+        rclcpp::Subscription<geometry_msgs::msg::TwistStamped>::SharedPtr m_TwistCmdSub;
+        realtime_tools::RealtimeBox<std::shared_ptr<geometry_msgs::msg::TwistStamped>> m_TwistCmdMsgPtr{nullptr};
         std::queue<geometry_msgs::msg::TwistStamped> m_PreviousCommands;
+
+        rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_OdomPub;
+        std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::msg::Odometry>> m_RtOdomPub = nullptr;
+
+        rclcpp::Publisher<tf2_msgs::msg::TFMessage>::SharedPtr m_OdomTransformPub;
+        std::shared_ptr<realtime_tools::RealtimePublisher<tf2_msgs::msg::TFMessage>> m_RtOdomTransformPub;
+
+
+        void cmdVel_callback(const std::shared_ptr<geometry_msgs::msg::TwistStamped> cmdVel_msg);
+
+        /**
+         * @brief Sets the realtime publisher messages for Odom and Transform publishers.
+         * 
+         */
+        void configure_realtime_publisher_msgs();
+
+        bool resetController();
 
     };
 }

@@ -27,7 +27,7 @@
 
 #include "mecanum_kinematics.hpp"
 
-namespace sspmbot
+namespace mecanum
 {
     namespace odometry
     {   
@@ -38,8 +38,14 @@ namespace sspmbot
             
             public:
             
+            Odometry();
             Odometry(const kinematics::WheelInformation& wheel_info);
             ~Odometry();
+
+            inline void setWheelParams(const kinematics::WheelInformation& wheel_info)
+            {
+                m_WheelInformation = wheel_info;
+            }
 
             /**
              * @brief Get the Odometry based on the body velocities and the wheel params.
